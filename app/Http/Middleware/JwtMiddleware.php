@@ -9,6 +9,7 @@ use Tymon\JWTAuth\Http\Middleware\BaseMiddleware;
 use App\Models\Token;
 use Exception;
 use JWTAuth;
+use JwtApi;
 
 class JwtMiddleware extends BaseMiddleware
 {
@@ -38,6 +39,14 @@ class JwtMiddleware extends BaseMiddleware
         if (!$token) {
             return response()->json(['status' => 'Token Invalid - bad issuer'], 403);
         }
+        
+        if ($token->ip != JwtApi::getIp() ){
+			return response()->json(['status' => 'Token Invalid for this IP'], 403);
+		}
+
+        if ($token->device != JwtApi::getUserAgent() ){
+			return response()->json(['status' => 'Token Invalid for this device'], 403);
+		}
         
         return $next($request);
     }

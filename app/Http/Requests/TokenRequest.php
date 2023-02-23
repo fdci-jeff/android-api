@@ -6,7 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Contracts\Validation\Validator;
 
-class RegisterRequest extends FormRequest
+class TokenRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,10 +24,9 @@ class RegisterRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:6|confirmed',
-            'username' => 'required|unique:users,username',
+            'id' => 'required|boolean',
+            'name' => 'required|boolean',
+            'email' => 'required|boolean'
         ];
     }
 
@@ -35,18 +34,17 @@ class RegisterRequest extends FormRequest
     {
         throw new HttpResponseException(response()->json([
             'success'   => false,
-            'message'   => 'Validation errors',
+            'message'   => 'Error! Bad Input',
             'data'      => $validator->errors()
         ]));
     }
-
+    
     public function messages()
     {
         return [
-            'email.required' => 'Email is required',
+            'id.required' => 'ID is required',
             'name.required' => 'Name is required',
-            'password.required' => 'Password is required',
-            'username.required' => 'Username is required'
+            'email.required' => 'Email is required',
         ];
     }
 }

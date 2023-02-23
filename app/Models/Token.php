@@ -14,16 +14,20 @@ class Token extends Model
 
     protected $fillable = [
         'user_id',
+        'api',
         'value',
         'jti',
+        'device',
         'type',
         'pair',
         'status',
-        'payload'
+        'payload',
+        'grants'
     ];
 
     protected $casts = [
-        'payload' => 'array'
+        'payload' => 'array',
+        'grants' => 'array'
     ];
   
     public function user() {

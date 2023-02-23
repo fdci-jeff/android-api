@@ -15,12 +15,17 @@ use App\Http\Controllers\Api\AuthController;
 |
 */
 
-Route::middleware('api')->prefix('user')->group(function () {
+Route::middleware('api')->prefix('auth')->group(function () {
     Route::post('register', [AuthController::class, 'register']);
     Route::post('login', [AuthController::class, 'login']);
     Route::post('logout', [AuthController::class, 'logout']);
     Route::post('logOutAll', [AuthController::class, 'logOutAll']);
     Route::post('profile', [AuthController::class, 'profile']);
+    Route::post('token/issue', [AuthController::class, 'tokenIssue']);
+});
+
+Route::middleware('api')->prefix('user')->group(function () {
+    Route::get('user', [UserController::class, 'user']);
 });
 
 Route::any('{any}', function () {

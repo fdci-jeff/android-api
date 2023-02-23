@@ -65,6 +65,7 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'jwt.verify' => \App\Http\Middleware\JwtMiddleware::class,
         'jwt.xauth' => \App\Http\Middleware\JwtXAuthMiddleware::class,
-        'jwt.xrefresh' => \App\Http\Middleware\JwtXRefreshMiddleware::class
+        'jwt.xrefresh' => \App\Http\Middleware\JwtXRefreshMiddleware::class,
+        'jwt.xresource' => \App\Http\Middleware\JwtXResourceMiddleware::class,
     ];
 }

@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Api;
 use App\Http\Requests\RegisterRequest;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
+use App\Http\Requests\TokenRequest;
 use Illuminate\Http\Request;
-use App\Models\User;
 use App\Models\Token;
+use App\Models\User;
+use JwtApi;
 
 class AuthController extends Controller
 {
@@ -102,6 +104,8 @@ class AuthController extends Controller
             'jti' => auth()->payload()->get('jti'),
             'type' => auth()->payload()->get('xtype'),
             'payload' => auth()->payload()->toArray(),
+            'ip' => JwtApi::getIp(),
+            'device' => JwtApi::getUserAgent()
         ]);
         
         $refresh_token = auth()->claims([
@@ -121,6 +125,8 @@ class AuthController extends Controller
             'type' => auth()->setToken($refresh_token)->payload()->get('xtype'),
             'pair' => $access_obj->id,
             'payload' => auth()->setToken($refresh_token)->payload()->toArray(),
+            'ip' => JwtApi::getIp(),
+            'device' => JwtApi::getUserAgent()
         ]);
         
         $access_obj->pair = $refresh_obj->id;
@@ -142,5 +148,29 @@ class AuthController extends Controller
             }
           }
           return response()->json(['message' => 'Successfully logged out from all devices']);
+    }
+    
+    public function tokenIssue(TokenRequest $request) {
+        $resource_token = auth()->claims([
+            'xtype' => 'resource'
+        ])->setTTL(60 * 24 * 365)->tokenById(auth()->user()->id);
+
+        $resource_token_obj = Token::create([
+            'user_id' => auth()->user()->id,
+            'value' => $resource_token,
+            'jti' => auth()->setToken($resource_token)->payload()->get('jti'),
+            'type' => auth()->setToken($resource_token)->payload()->get('xtype'),
+            'pair' => null,
+            'payload' => auth()->setToken($resource_token)->payload()->toArray(),
+            'grants' => [
+              'id' => $request->input('id'),
+              'name' => $request->input('name'),
+              'email' => $request->input('email')
+            ],
+            'ip' => null,
+            'device' => null
+        ]);
+        
+        return response()->json(['token' => $resource_token]);
     }
 }
