@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Models\Token;
 
 class AuthController extends Controller
 {
@@ -15,8 +16,7 @@ class AuthController extends Controller
      *
      * @return void
      */
-    public function __construct()
-    {
+    public function __construct() {
         $this->middleware('jwt.verify', ['except' => ['login', 'register']]);
         $this->middleware('jwt.xauth', ['except' => ['login', 'register', 'refresh']]);
         $this->middleware('jwt.xrefresh', ['only' => ['refresh']]);
@@ -45,10 +45,11 @@ class AuthController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function logout()
-    {
+    public function logout() {
+        $refresh_obj = Token::findPairByValue( auth()->getToken()->get() );
         auth()->logout();
-        
+        auth()->setToken($refresh_obj->value)->logout();
+
         return response()->json(['message' => 'Successfully logged out']);
     }
 
@@ -57,8 +58,7 @@ class AuthController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function refresh()
-    {
+    public function refresh() {
         $access_token = auth()->claims(['xtype' => 'auth'])->refresh(true,true);
 		auth()->setToken($access_token); 
 
@@ -72,8 +72,7 @@ class AuthController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    public function register(RegisterRequest $request)
-    {
+    public function register(RegisterRequest $request) {
         $user = User::create($request->validated());
 
         return response()->json([
@@ -89,24 +88,59 @@ class AuthController extends Controller
      *
      * @return \Illuminate\Http\JsonResponse
      */
-    protected function respondWithToken($token)
-    {
-        return response()->json([
-            'access_token' => $token,
+
+    protected function respondWithToken($access_token) {
+        $response_array = [
+            'access_token' => $access_token,
             'token_type' => 'bearer',
-            'expires_in' => auth('api')->factory()->getTTL() * 60,
-            'refresh_token' => auth()->claims([
-                'xtype' => 'refresh',
-                'xpair' => auth()->payload()->get('jti')
-            ])
-            ->setTTL(auth('api')->factory()->getTTL() * 3)
-            ->tokenById(auth()->user()->id),
-            'refresh_expires_in' => auth('api')->factory()->getTTL() * 60,
+            'access_expires_in' => auth('api')->factory()->getTTL() * 60,
+        ];
+        
+        $access_obj = Token::create([
+            'user_id' => auth()->user()->id,
+            'value' => $access_token,
+            'jti' => auth()->payload()->get('jti'),
+            'type' => auth()->payload()->get('xtype'),
+            'payload' => auth()->payload()->toArray(),
         ]);
+        
+        $refresh_token = auth()->claims([
+            'xtype' => 'refresh',
+            'xpair' => auth()->payload()->get('jti')
+        ])->setTTL(auth('api')->factory()->getTTL() * 3)->tokenById(auth()->user()->id);
+        
+        $response_array +=[
+            'refresh_token' => $refresh_token,
+            'refresh_expires_in' => auth('api')->factory()->getTTL() * 60
+        ];
+        
+        $refresh_obj = Token::create([
+            'user_id' => auth()->user()->id,
+            'value' => $refresh_token,
+            'jti' => auth()->setToken($refresh_token)->payload()->get('jti'),
+            'type' => auth()->setToken($refresh_token)->payload()->get('xtype'),
+            'pair' => $access_obj->id,
+            'payload' => auth()->setToken($refresh_token)->payload()->toArray(),
+        ]);
+        
+        $access_obj->pair = $refresh_obj->id;
+        $access_obj->save();
+
+        return response()->json($response_array);
     }
 
-    public function profile()
-    {
+    public function profile() {
         return response()->json(auth()->user());
+    }
+
+    public function logOutAll(Request $request) {
+        foreach( auth()->user()->token as $token_obj ){
+            try{
+              auth()->setToken( $token_obj->value )->invalidate(true);
+            } catch (Exception $e){
+              //do nothing, it's already bad token for various reasons
+            }
+          }
+          return response()->json(['message' => 'Successfully logged out from all devices']);
     }
 }

@@ -6,6 +6,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Tymon\JWTAuth\Http\Middleware\BaseMiddleware;
+use App\Models\Token;
 use Exception;
 use JWTAuth;
 
@@ -31,6 +32,13 @@ class JwtMiddleware extends BaseMiddleware
                 return response()->json(['status' => 'Authorization Token not found'], 404);
             }
         }
+        
+        $token = Token::findByValue( auth()->getToken()->get() );
+        
+        if (!$token) {
+            return response()->json(['status' => 'Token Invalid - bad issuer'], 403);
+        }
+        
         return $next($request);
     }
 }
