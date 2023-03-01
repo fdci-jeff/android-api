@@ -115,7 +115,8 @@ class AuthController extends Controller
         
         $response_array +=[
             'refresh_token' => $refresh_token,
-            'refresh_expires_in' => auth('api')->factory()->getTTL() * 60
+            'refresh_expires_in' => auth('api')->factory()->getTTL() * 60,
+            'user' => auth()->user()
         ];
         
         $refresh_obj = Token::create([
