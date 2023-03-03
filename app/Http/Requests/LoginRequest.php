@@ -3,7 +3,8 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Contracts\Validation\Factory as ValidationFactory;
+use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Contracts\Validation\Validator;
 
 class LoginRequest extends FormRequest
 {
@@ -27,35 +28,24 @@ class LoginRequest extends FormRequest
             'password' => 'required'
         ];
     }
-
-    public function getCredentials()
-    {
-        $username = $this->get('username');
-
-        if ($this->isEmail($username)) {
-            return [
-                'email' => $username,
-                'password' => $this->get('password')
-            ];
-        }
-
-        return $this->only('username', 'password');
+    
+    public function failedValidation(Validator $validator) {
+        throw new HttpResponseException(response()->json([
+            'success'   => false,
+            'error'      => $validator->errors()
+        ], 422));
     }
 
-    /**
-     * Validate if provided parameter is valid email.
+      /**
+     * Custom message for validation
      *
-     * @param $param
-     * @return bool
-     * @throws \Illuminate\Contracts\Container\BindingResolutionException
+     * @return array
      */
-    private function isEmail($param)
+    public function messages()
     {
-        $factory = $this->container->make(ValidationFactory::class);
-
-        return ! $factory->make(
-            ['username' => $param],
-            ['username' => 'email']
-        )->fails();
+        return [
+            'username.required' => 'Email is required!',
+            'password.required' => 'Password is required!'
+        ];
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use Illuminate\Contracts\Validation\Validator;
 use App\Http\Requests\RegisterRequest;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\LoginRequest;
@@ -31,15 +32,21 @@ class AuthController extends Controller
      */
     public function login(LoginRequest $request) {
         
-        $credentials = $request->getCredentials();
+        if ($request->validated()) {
+            $field = filter_var($request->input('username'), FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
 
-        $token = auth()->attempt($credentials);
+            $request->merge([$field => $request->input('username')]);
 
-        if (!$access_token = auth()->claims(['xtype' => 'auth'])->attempt($credentials)) {
-            return response()->json(['error' => 'Unauthorized'], 401);
-        }
+            $credentials = $request->only($field, 'password');
+    
+            $token = auth()->attempt($credentials);
 
-        return $this->respondWithToken($access_token);
+            if (!$access_token = auth()->claims(['xtype' => 'auth'])->attempt($credentials)) {
+                return response()->json(['error' => 'Invalid Credentials'], 401);
+            }
+
+            return $this->respondWithToken($access_token);
+        } 
     }
 
     /**
@@ -114,6 +121,7 @@ class AuthController extends Controller
         ])->setTTL(auth('api')->factory()->getTTL() * 3)->tokenById(auth()->user()->id);
         
         $response_array +=[
+            'success' => true,
             'refresh_token' => $refresh_token,
             'refresh_expires_in' => auth('api')->factory()->getTTL() * 60,
             'user' => auth()->user()
