@@ -39,9 +39,9 @@ class JwtXResourceMiddleware extends BaseMiddleware
 			return response()->json(['status' => 'Token revoked'], 403);
 		}
 
-		if ( $token_obj->payload['xtype'] != 'resource' ){
-			return response()->json(['status' => 'Token Misused'], 406);
-		}
+		// if ( $token_obj->payload['xtype'] != 'resource' ){
+		// 	return response()->json(['status' => 'Token Misused'], 406);
+		// }
 
 		return $next($request);
     }

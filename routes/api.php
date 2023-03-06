@@ -27,7 +27,7 @@ Route::middleware('api')->prefix('auth')->group(function () {
 });
 
 Route::middleware('api')->prefix('user')->group(function () {
-    Route::get('get_user', [UserController::class, 'user']);
+    Route::post('get_user', [UserController::class, 'user']);
 });
 
 Route::any('{any}', function () {
