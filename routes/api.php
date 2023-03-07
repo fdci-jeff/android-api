@@ -2,8 +2,10 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\AmadeusController; 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\UserController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -28,6 +30,7 @@ Route::middleware('api')->prefix('auth')->group(function () {
 
 Route::middleware('api')->prefix('user')->group(function () {
     Route::post('get_user', [UserController::class, 'user']);
+    Route::get('get_flight_offers', [AmadeusController::class, 'getFlightOffers']);
 });
 
 Route::any('{any}', function () {

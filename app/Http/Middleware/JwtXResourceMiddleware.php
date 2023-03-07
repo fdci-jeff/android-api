@@ -20,6 +20,9 @@ class JwtXResourceMiddleware extends BaseMiddleware
     public function handle(Request $request, Closure $next): Response
     {
         try {
+			if (empty($request->token)) {
+				return response()->json(['status' => 'Token Not Found', 'success' => false], 404);
+			}
 			$user = JWTAuth::parseToken()->authenticate();
  		} catch (Exception $e) {
         	if ($e instanceof \Tymon\JWTAuth\Exceptions\TokenInvalidException){
