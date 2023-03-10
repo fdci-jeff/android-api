@@ -30,7 +30,7 @@ Route::middleware('api')->prefix('auth')->group(function () {
 
 Route::middleware('api')->prefix('user')->group(function () {
     Route::post('get_user', [UserController::class, 'user']);
-    Route::get('get_flight_offers', [AmadeusController::class, 'getFlightOffers']);
+    Route::get('get_hotel', [UserController::class, 'getHotel']);
 });
 
 Route::any('{any}', function () {
