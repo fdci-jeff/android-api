@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Http\Client\RequestException;
 use App\Models\User;
 use App\Models\Token;
 use GuzzleHttp\Client;
@@ -47,59 +48,57 @@ class UserController extends Controller
         }
 
         return response()->json(['status' => 'User found', 'success' => true, 'user' => $user], 200);
-        // $token_obj = Token::findByValue(auth()->getToken()->get());
-        // $grantedAttr=[];
-        // foreach ( $token_obj->grants as $grant=>$val ){
-        //   if ( $val ) array_push($grantedAttr, $grant);
-        // }
-        // return response()->json(['user' => auth()->user()->only($grantedAttr) ], 200);
     }
 
-    public function getHotel()
+    public function getNews(Request $request)
     {
-        $url = env('AMADEUS_TEST_LINK') ."v1/security/oauth2/token";
+        $url = env('NEWS_API_LINK');
+
+        $pagination = $request->page;
+        $limit = 100;
+
+        $offset = $limit * ($pagination - 1);
+		$hasnext = $pagination * $limit;
 
         try{
             $client = new Client(); 
-            $result = $client->post($url, [
-                'form_params' => [
-                    'client_id' => env('AMADEUS_CLIENT_ID'),
-                    'client_secret' => env('AMADEUS_CLIENT_SECRET'),
-                    'grant_type' =>  'client_credentials',
+            $result = $client->get($url, [
+                'query' => [
+                    'countries' => 'ph',
+                    'access_key' => env('NEWS_API_KEY'),
+                    'limit' => $limit,
+                    'date' => '2023-03-13',
+                    'offset' => $offset
                 ]
             ]);  
-            if($result->getStatusCode()){
-                $result = json_decode($result->getBody());
+            if($result->getStatusCode() == 200){
+                $result = json_decode($result->getBody(), true);
                 
+                $total = $result['pagination']['total'];
 
-                $params = [
-                    'hotelIds' => 'MCLONGHM'
-                ];
+                $result['pagination']['has_next'] = $hasnext >= $total ? false : true;
 
-                $hotel_url = env('AMADEUS_TEST_LINK')."v3/shopping/hotel-offers"."?".http_build_query($params);
-                $authorization = "Bearer ".$result->access_token;
-                $requestParams=[
-                    'headers' => ['Content-Type' => 'application/vnd.amadeus+json','Authorization' => $authorization],
-                    'verify' => false,
-                ];
-
-                $hotel = $client->get($hotel_url, $requestParams);
-                if($hotel->getStatusCode()){
-                    $content = json_decode($hotel->getBody());
-                
-                    return $content;
-    
-                }
+                return response()->json(
+                    [
+                        'status' => 'success',
+                        'news'   => $result['data'],
+                        'pagination' => $result['pagination']
+                    ], 200);
 
             } else{
-                return false;
+                return response()->json(
+                    [
+                        'status' => 'failed',
+                        'message' => 'API request failed'
+                    ], 404);
             }
 
-        } catch(GuzzleException $exception){
-            // $response = $exception->getResponse();
-            // $result= json_decode($response->getBody()->getContents());
-
-            return false;
+        } catch(RequestException $e){
+            return response()->json(
+                [
+                    'status' => 'failed',
+                    'message' => $e->getMessage()
+                ], 500);
         }
 
     }
