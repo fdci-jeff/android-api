@@ -67,7 +67,7 @@ class UserController extends Controller
                     'countries' => 'ph',
                     'access_key' => env('NEWS_API_KEY'),
                     'limit' => $limit,
-                    'date' => '2023-03-13',
+                    'date' =>  '2023-03-20',
                     'offset' => $offset
                 ]
             ]);  
@@ -80,7 +80,8 @@ class UserController extends Controller
 
                 return response()->json(
                     [
-                        'status' => 'success',
+                        'success' => true,
+                        'status' => 'News Found',
                         'news'   => $result['data'],
                         'pagination' => $result['pagination']
                     ], 200);
