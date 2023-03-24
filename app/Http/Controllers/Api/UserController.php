@@ -67,7 +67,61 @@ class UserController extends Controller
                     'countries' => 'ph',
                     'access_key' => env('NEWS_API_KEY'),
                     'limit' => $limit,
-                    'date' =>  '2023-03-20',
+                    'sort' =>  'popularity',
+                    'offset' => $offset
+                ]
+            ]);  
+            if($result->getStatusCode() == 200){
+                $result = json_decode($result->getBody(), true);
+                
+                $total = $result['pagination']['total'];
+
+                $result['pagination']['has_next'] = $hasnext >= $total ? false : true;
+
+                return response()->json(
+                    [
+                        'success' => true,
+                        'status' => 'News Found',
+                        'news'   => $result['data'],
+                        'pagination' => $result['pagination']
+                    ], 200);
+
+            } else{
+                return response()->json(
+                    [
+                        'status' => 'failed',
+                        'message' => 'API request failed'
+                    ], 404);
+            }
+
+        } catch(RequestException $e){
+            return response()->json(
+                [
+                    'status' => 'failed',
+                    'message' => $e->getMessage()
+                ], 500);
+        }
+
+    }
+
+    public function getLatestNews(Request $request)
+    {
+        $url = env('NEWS_API_LINK');
+
+        $pagination = $request->page;
+        $limit = 100;
+
+        $offset = $limit * ($pagination - 1);
+		$hasnext = $pagination * $limit;
+
+        try{
+            $client = new Client(); 
+            $result = $client->get($url, [
+                'query' => [
+                    'countries' => 'ph',
+                    'access_key' => env('NEWS_API_KEY'),
+                    'limit' => $limit,
+                    'date' =>  '2023-03-24',
                     'offset' => $offset
                 ]
             ]);  

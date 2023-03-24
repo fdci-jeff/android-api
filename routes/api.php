@@ -31,6 +31,7 @@ Route::middleware('api')->prefix('auth')->group(function () {
 Route::middleware('api')->prefix('user')->group(function () {
     Route::post('get_user', [UserController::class, 'user']);
     Route::get('get_news', [UserController::class, 'getNews']);
+    Route::get('get_latest_news', [UserController::class, 'getLatestNews']);
 });
 
 Route::any('{any}', function () {
